@@ -50,7 +50,7 @@ def get_usgs(basin):
 				temp_d[basin].update({i : t})
 		
 ##################################
-####RELOAD TEMPERATURE DB
+####MAKE TEMPERATURE DB
 
 for b in d.keys():
 	get_usgs(b)
@@ -114,6 +114,8 @@ def relate_met(basin):
 
 ######################################
 
+cat_d = {}
+
 def cat_vars(basin):
 	w = temp_d[basin][diff_d[basin].keys()[0]]
 	diff_coords = diff_d[basin][diff_d[basin].keys()[0]]
@@ -128,73 +130,23 @@ def cat_vars(basin):
 	w['w_tmax'] = [float(i) for i in w['w_tmax']]
 	w['w_tmin'] = [float(i) for i in w['w_tmin']]
 	w['w_tavg'] = 0.5*(w['w_tmin'] + w['w_tmax'])
-	print w
-	print w.index
-	print w['w_tmax'].quantile(q=0.95)
-	print w['w_tmax'].quantile(q=0.05)
-	print max(w['w_tmax'])
-	print min(w['w_tmin'])
-	print max(w['w_tmin'])
-	a = pd.read_csv('./master/data_%s_%s' % (str(diff_coords[0]), str(diff_coords[1])))
-	d1 = date(1949, 1, 1)
-	d2 = date(2010, 12, 31)
-	ddelta = d2 - d1
-	dr = [d1 + td(days=i) for i in range(ddelta.days + 1)]
-	print len(dr)
-	a['date'] = dr
-	a = a.set_index['date']
-	c = pd.concat([w,c], axis=1)
-		
-######################################
-####OLD
-
-#diff_d = {}
-#
-#def relate_met(basin):
-#	diff_d.update({basin : {}})
-#	for i in temp_d[basin].keys():
-#		fn_d = {}
-#		ll = loc_d[basin]['latlon'].ix[loc_d[basin]['SITE_NO'] == i]
-#		ll = tuple(ll.values)[0]
-#		lat = ll[0]
-#		lon = ll[1]
-#		for v in latlon_d.values:
-#			diff = ((v[0] - lat)**2 + (v[1] - lon)**2)**0.5
-#			fn_d.update({v : diff})
-#		cell = min(fn_d, key=fn_d.get)
-#		print cell
-#		mi = fn_d[cell]
-#		print mi
-#		diff_d[basin].update({i : cell})
-
-
-###################################
-
-
-
-
-
-
-
-
-
-##################################
-
-
-testtab = url.urlopen("http://waterdata.usgs.gov/nwis/dv?referred_module=sw&search_site_no=13343000&search_site_no_match_type=exact&site_tp_cd=OC&site_tp_cd=OC-CO&site_tp_cd=ES&site_tp_cd=LK&site_tp_cd=ST&site_tp_cd=ST-CA&site_tp_cd=ST-DCH&site_tp_cd=ST-TS&dv_count_nu=1&index_pmcode_00010=1&group_key=NONE&sitefile_output_format=html_table&column_name=agency_cd&column_name=site_no&column_name=station_nm&range_selection=days&period=365&begin_date=2013-07-16&end_date=2014-07-15&format=rdb&date_format=YYYY-MM-DD&rdb_compression=value&list_of_search_criteria=search_site_no%2Csite_tp_cd%2Cobs_count_nu%2Crealtime_parameter_selection")
-
-r = testtab.readlines()
-st_i = None
-
-for i, line in enumerate(r):
-	if "No sites" in line[0]:
-		break
-	elif 'agency_cd' in line:
-		st_i = i
-		
-raw_li = r[st_i:]
-raw_str = ''.join(raw_li)
-st_input = StringIO(raw_str)
-t = pd.read_table(st_input)
-t = t[1:]
-print t
+#	print w
+#	print w.index
+#	print w['w_tmax'].quantile(q=0.95)
+#	print w['w_tmax'].quantile(q=0.05)
+#	print max(w['w_tmax'])
+#	print min(w['w_tmin'])
+#	print max(w['w_tmin'])
+	a = pd.read_csv('./master/data_%s_%s' % (str(diff_coords[0]), str(diff_coords[1])), sep='\t', header=None, index_col=False, names=['year', 'month', 'day', 'prcp', 'tmax', 'tmin', 'wspd'])
+#	d1 = date(1949, 1, 1)
+#	d2 = date(2010, 12, 31)
+#	ddelta = d2 - d1
+#	dr = [d1 + td(days=i) for i in range(ddelta.days + 1)]
+#	print len(dr)
+#	print a[['year', 'month', 'day']]
+	a['date'] = [date(a['year'][i], a['month'][i], a['day'][i]) for i in a.index]
+#	print a['date']
+	a = a.set_index('date')
+	c = pd.concat([w,a], axis=1)
+	print c
+	cat_d.update({basin : c})
