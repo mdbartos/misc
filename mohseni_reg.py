@@ -125,6 +125,17 @@ class make_mohseni():
 		u = min(ydata)#.quantile(q=0.001)
 		return u + (a-u)/(1 + np.exp(g*(b-x)))
 
+	def NS(self, s,o):
+		"""
+		Nash Sutcliffe efficiency coefficient
+		input:
+			s: simulated
+			o: observed
+		output:
+			ns: Nash Sutcliffe efficient coefficient
+		"""
+		return 1 - sum((s-o)**2)/sum((o-np.mean(o))**2)
+
 	def fit_mohseni(self, basin, **kwargs):
 		if kwargs['automax'] == True:
 			st_id = self.max_d[basin]
@@ -141,30 +152,6 @@ class make_mohseni():
 		self.param_d[basin].update({st_id : [popt, perr]})
 		print popt, perr
 
-	def filter_nan(s,o):
-		"""
-		this functions removed the data  from simulated and observed data
-		whereever the observed data contains nan
-		
-		this is used by all other functions, otherwise they will produce nan as 
-		output
-		"""
-		data = np.array([s,o])
-		data = np.transpose(data)
-		data = data[~np.isnan(data).any(1)]
-		return data[:,0],data[:,1]
-
-	def NS(self, s,o):
-		"""
-		Nash Sutcliffe efficiency coefficient
-		input:
-			s: simulated
-			o: observed
-		output:
-			ns: Nash Sutcliffe efficient coefficient
-		"""
-		s,o = filter_nan(s,o)
-		return 1 - sum((s-o)**2)/sum((o-np.mean(o))**2)
 
 	def plot_curvefit(self, basin, **kwargs):
 		if kwargs['automax'] == True:
@@ -174,20 +161,24 @@ class make_mohseni():
 		fig, ax = plt.subplots(1)
 		xdata = self.src_data['tavg']
 		ydata = self.src_data['w_tavg']
+		NSC = self.NS(self.mohseni(xdata, self.param_d[basin][st_id][0][0], self.param_d[basin][st_id][0][1]), ydata)
+		print 'NSC', NSC
 		xy = np.vstack([xdata, ydata])
 		z = gaussian_kde(xy)(xy)
 		ax.scatter(xdata, ydata, c=z, s=100, edgecolor='')
-		ax.plot(arange(-20, 60), self.mohseni(arange(-20, 60), self.param_d[basin][st_id][0][0], self.param_d[basin][st_id][0][1]))
+		ax.plot(arange(-20, 61), self.mohseni(arange(-20, 61), self.param_d[basin][st_id][0][0], self.param_d[basin][st_id][0][1]), c='black')
 		statname = self.loc_d[basin]['STATION_NM'].ix[m.loc_d[basin]['SITE_NO'] == st_id]
 		statname = statname.values[0]
 		print statname
 		title('USGS STATION %s, %s' % (self.max_d[basin], statname))
 		xlabel('Air Temperature ($^\circ$C)')
 		ylabel('Stream Temperature ($^\circ$C)')
+		ylim([0, max(self.src_data['w_tavg']) + 5])
+		xlim([-20, 60])
 #		textstr = r'$\beta=%.2f$\n$\gamma=%.2f$\n' % (self.param_d[basin][0][0], self.param_d[basin][0][1])
-		textstr = '$\\alpha=%.2f$\n$\\beta=%.2f$\n$\\gamma=%.2f$\n$\\mu=%.2f$\n' % (max(self.src_data['w_tavg']), self.param_d[basin][st_id][0][0], self.param_d[basin][st_id][0][1], min(self.src_data['w_tavg']))
+		textstr = '$\\alpha=%.2f$\n$\\beta=%.2f$\n$\\gamma=%.2f$\n$\\mu=%.2f$\n$n=%s$\n$N.S.C.=%.2f$' % (max(self.src_data['w_tavg']), self.param_d[basin][st_id][0][0], self.param_d[basin][st_id][0][1], min(self.src_data['w_tavg']), str(len(ydata)), NSC)
 		props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
-		ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top', bbox=props)
+		ax.text(0.05, 0.95, textstr, transform=ax.transAxes, fontsize=14, verticalalignment='top', linespacing=1.25, bbox=props)
 		
 	def prep_data(self, basin, **kwargs):
 		self.find_max_station()
@@ -213,6 +204,8 @@ class make_mohseni():
 m = make_mohseni()
 m.prep_data('lees_f', automax=True)
 m.reg_exec('lees_f', automax=True)
+m.prep_data('pitt', automax=True)
+m.reg_exec('pitt', automax=True)
 
 m = make_mohseni()
 m.prep_data('lees_f', automax=False, st_id='09095500')
