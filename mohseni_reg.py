@@ -17,6 +17,18 @@ latlon_d = pd.concat([i for i in r_latlon.values()], ignore_index=True)
 latlon_d = latlon_d.drop_duplicates()
 stat_cds = pd.read_csv('stat_cd_nm_query.asc', sep='\t', skiprows=7)
 
+####IMPORT EXTRA DATA####
+lc = pd.read_csv('LCR.csv')
+lc.columns = ['year', 'month', 'day', 'hour', 'temperature']
+lcgb = lc.groupby(['year', 'month', 'day']).mean().reset_index()
+lcgb['datetime'] = ['-'.join([str(lcgb['year'][i]), str(lcgb['month'][i]), str(lcgb['day'][i])]) for i in lcgb.index]
+lcgb['01_00010_00003'] = lcgb['temperature']
+lcgb['01_00010_00003_cd'] = ['A' for i in lcgb.index if lcgb['temperature'][i] != np.nan]
+lcgb['site_no'] = '9999999'
+lcimp = lcgb[['site_no', 'datetime', '01_00010_00003', '01_00010_00003_cd']]
+temp_d['little_col'].update({'9999999' : lcimp})
+##########################
+
 class make_mohseni():
 	def __init__(self):
 #		self.basin = basin
@@ -87,6 +99,7 @@ class make_mohseni():
 	#		print diff_coords
 	#		print [i for i in t['datetime']]
 			w['date'] = [(date(int(i.split('-')[0]), int(i.split('-')[1]), int(i.split('-')[2]))) for i in w['datetime']]
+			w = w.drop_duplicates(cols='date')
 			col_li = [i for i in w.columns if '00010' in i]
 			temp_cols = [i for i in col_li if not 'cd' in i]
 			cd_cols = [i for i in col_li if 'cd' in i]
@@ -144,6 +157,8 @@ class make_mohseni():
 				a['date'] = [date(a['year'][i], a['month'][i], a['day'][i]) for i in a.index]
 		#		print a['date']
 				a = a.set_index('date')
+				print 'w', w
+				print 'a', a
 				c = pd.concat([w,a], axis=1)
 				print c
 				self.cat_d.update({basin : {}})
@@ -192,7 +207,8 @@ class make_mohseni():
 				g_init = 0.2
 				popt, pcov = curve_fit(self.mohseni, xdata, ydata, p0=[b_init, g_init])
 				NSC = self.NS(self.mohseni(xdata, popt[0], popt[1]), ydata)
-				self.param_d.update({basin : {}})
+				if basin not in self.param_d.keys():
+					self.param_d.update({basin : {}})
 				self.param_d[basin].update({st_id : {}})
 				self.param_d[basin][st_id].update({'a': max(ydata), 'b': popt[0], 'g': popt[1], 'u': min(ydata), 'n': len(ydata), 'nsc': NSC})
 				print popt, NSC
@@ -257,21 +273,60 @@ class make_mohseni():
 			try:
 				self.fit_mohseni(basin, automax=True)
 			except RuntimeError:
-				self.param_d[basin][st_id].update({'a': 'NA', 'b': 'NA', 'g': 'NA', 'u': 'NA', 'n': 'NA', 'nsc': 'NA'})
+				self.param_d[basin][st_id].update({'a': np.nan, 'b': np.nan, 'g': np.nan, 'u': np.nan, 'n': np.nan, 'nsc': np.nan})
 			else:
-				self.plot_curvefit(basin, automax=True)
+				if kwargs['plot_results'] == True:
+					self.plot_curvefit(basin, automax=True)
+				else:
+					pass
 		else:
 			st_id = kwargs['st_id']
 			try:
 				self.fit_mohseni(basin, automax=False, st_id=st_id)
 			except RuntimeError:
 				self.param_d[basin].update({st_id : {}})
-				self.param_d[basin][st_id].update({'a': 'NA', 'b': 'NA', 'g': 'NA', 'u': 'NA', 'n': 'NA', 'nsc': 'NA'})
+				self.param_d[basin][st_id].update({'a': np.nan, 'b': np.nan, 'g': np.nan, 'u': np.nan, 'n': np.nan, 'nsc': np.nan})
 			else:
-				self.plot_curvefit(basin, automax=False, st_id=st_id)
-		
+				if kwargs['plot_results'] == True:
+					self.plot_curvefit(basin, automax=False, st_id=st_id)
+				else:
+					pass		
 
 m = make_mohseni()
+for u in temp_d.keys():
+	for q in temp_d[u].keys():
+		m.prep_data(u, automax=False, st_id=q)
+		m.reg_exec(u, automax=False, st_id=q, plot_results=False)
+		
+pickle.dump( m.param_d, open( "param_d.p", "wb" ) )
+
+#######MAKE PARAM TABLE###########
+
+param_d = m.param_d
+
+df_li = []
+
+for j in param_d:
+	df = pd.DataFrame.from_dict(param_d[j], orient='index')
+	df['basin'] = j
+	df['lat'] = [m.loc_d[j]['latlon'].ix[m.loc_d[j]['SITE_NO'] == i].values[0][0] for i in df.index]
+	df['lon'] = [m.loc_d[j]['latlon'].ix[m.loc_d[j]['SITE_NO'] == i].values[0][1] for i in df.index]
+	df = df.dropna()
+	print df
+	df_li.append(df)
+
+
+param_table = pd.concat(df_li)
+
+param_table = param_table.drop(param_table['a'][param_table['a'] > param_table['a'].std() * 3].index)
+param_table = param_table.drop(param_table['b'][param_table['b'] > param_table['b'].std() * 3].index)
+param_table = param_table.drop(param_table['g'][param_table['g'] > param_table['g'].std() * 3].index)
+param_table = param_table.drop(param_table['u'][param_table['u'] > param_table['u'].std() * 3].index)
+
+param_table.to_csv('param_table.csv')
+
+##################################
+
 m.prep_data('lees_f', automax=True)
 m.reg_exec('lees_f', automax=True)
 m.prep_data('pitt', automax=True)
@@ -297,7 +352,7 @@ m.reg_exec('lees_f', automax=False, st_id='09095500')
 m = make_mohseni()
 for q in temp_d['comanche'].keys():
 	m.prep_data('comanche', automax=False, st_id=q)
-	m.reg_exec('comanche', automax=False, st_id=q)
+	m.reg_exec('comanche', automax=False, st_id=q, plot_results=False)
 
 m = make_mohseni()
 for q in temp_d['paper'].keys():
@@ -317,7 +372,7 @@ for q in temp_d['pawnee'].keys():
 m = make_mohseni()
 for q in temp_d['pitt'].keys():
 	m.prep_data('pitt', automax=False, st_id=q)
-	m.reg_exec('pitt', automax=False, st_id=q)
+	m.reg_exec('pitt', automax=False, st_id=q, plot_results=False)
 
 m = make_mohseni()
 for q in temp_d['colstrip'].keys():
@@ -337,7 +392,7 @@ for q in temp_d['lees_f'].keys():
 m = make_mohseni()
 for q in temp_d['brigham'].keys():
 	m.prep_data('brigham', automax=False, st_id=q)
-	m.reg_exec('brigham', automax=False, st_id=q)
+	m.reg_exec('brigham', automax=False, st_id=q, plot_results=False)
 	
 m = make_mohseni()
 for q in temp_d['brigham'].keys():
@@ -364,6 +419,16 @@ for q in temp_d['salton'].keys():
 	m.prep_data('salton', automax=False, st_id=q)
 	m.reg_exec('salton', automax=False, st_id=q)
 	
+m = make_mohseni()
+for q in temp_d['little_col'].keys():
+	m.prep_data('little_col', automax=False, st_id=q)
+	m.reg_exec('little_col', automax=False, st_id=q, plot_results=True)
+
+m = make_mohseni()
+for q in temp_d['wabuska'].keys():
+	m.prep_data('wabuska', automax=False, st_id=q)
+	m.reg_exec('wabuska', automax=False, st_id=q, plot_results=False)
+
 m = make_mohseni()
 m.find_max_station()
 m.make_loc_d()
