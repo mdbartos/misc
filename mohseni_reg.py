@@ -325,6 +325,27 @@ param_table = param_table.drop(param_table['u'][param_table['u'] > param_table['
 
 param_table.to_csv('param_table.csv')
 
+#######COKRIGING DATA#############
+import os
+import pandas as pd
+import numpy as np
+import ast
+
+df_d = {}
+ct = 0
+
+for fn in os.listdir('.'):
+	lat = ast.literal_eval(fn.split('_')[1])
+	lon = ast.literal_eval(fn.split('_')[2])
+	df = pd.read_csv(fn, sep='\t', header=None, index_col=None)
+	df.columns = ['year', 'month', 'day', 'prcp', 'tmax', 'tmin', 'wspd']
+	df = df.mean()
+	df_d.update({ct : {}})
+	df_d[ct].update({'lat': lat, 'lon': lon, 'prcp' : df['prcp'], 'tmax' : df['tmax'], 'tmin' : df['tmin'], 'wspd' : df['wspd']})
+	ct = ct + 1
+	
+t = pd.DataFrame.from_dict(df_d, orient='index')
+
 ##################################
 
 m.prep_data('lees_f', automax=True)
