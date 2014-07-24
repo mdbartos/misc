@@ -21,6 +21,11 @@ stat_cds = pd.read_csv('stat_cd_nm_query.asc', sep='\t', skiprows=7)
 latlon_d = [tuple([ast.literal_eval(fn.split('_')[1]), ast.literal_eval(fn.split('_')[2])])  for fn in os.listdir('./master')]
 latlon_d = pd.Series(latlon_d)
 
+for i in temp_d.keys():
+	for j in temp_d[i].keys():
+		if j not in huc_ix[i].keys():
+			print i, j
+
 ####IMPORT EXTRA DATA####
 lc = pd.read_csv('LCR.csv')
 lc.columns = ['year', 'month', 'day', 'hour', 'temperature']
@@ -260,8 +265,10 @@ class make_mohseni():
 			pass
 		
 	def prep_data(self, basin, **kwargs):
-		self.find_max_station()
-		self.make_loc_d(basin)
+		if kwargs['automax'] == True:
+			self.find_max_station()
+		if basin not in self.loc_d.keys():
+			self.make_loc_d(basin)
 		if kwargs['automax'] == True:
 			self.relate_met(basin, automax=True)
 			self.cat_vars(basin, automax=True)
@@ -295,11 +302,12 @@ class make_mohseni():
 					pass		
 
 m = make_mohseni()
-for u in temp_d.keys():
-	for q in temp_d[u].keys():
-		m.prep_data(u, automax=False, st_id=q)
-		m.reg_exec(u, automax=False, st_id=q, plot_results=False)
-		
+for ug in temp_d.keys():
+	for qg in temp_d[ug].keys():
+		m.prep_data(ug, automax=False, st_id=qg)
+		m.reg_exec(ug, automax=False, st_id=qg, plot_results=False)
+
+pickle.dump( m.param_d, open( "param_d_all.p", "wb" ) )		
 pickle.dump( m.param_d, open( "param_d.p", "wb" ) )
 
 m = make_mohseni()
@@ -316,21 +324,22 @@ df_li = []
 for j in param_d:
 	df = pd.DataFrame.from_dict(param_d[j], orient='index')
 	df['basin'] = j
-	df['lat'] = [m.loc_d[j]['latlon'].ix[m.loc_d[j]['SITE_NO'] == i].values[0][0] for i in df.index]
-	df['lon'] = [m.loc_d[j]['latlon'].ix[m.loc_d[j]['SITE_NO'] == i].values[0][1] for i in df.index]
+	df['lat'] = [m.loc_d[j]['latlon'][i][0] for i in df.index]
+	df['lon'] = [m.loc_d[j]['latlon'][i][1] for i in df.index]
 	df = df.dropna()
 	print df
 	df_li.append(df)
 
 
 param_table = pd.concat(df_li)
+param_table.to_csv('param_table_all_raw.csv')
 
 param_table = param_table.drop(param_table['a'][param_table['a'] > param_table['a'].std() * 3].index)
 param_table = param_table.drop(param_table['b'][param_table['b'] > param_table['b'].std() * 3].index)
 param_table = param_table.drop(param_table['g'][param_table['g'] > param_table['g'].std() * 3].index)
 param_table = param_table.drop(param_table['u'][param_table['u'] > param_table['u'].std() * 3].index)
 
-param_table.to_csv('param_table.csv')
+param_table.to_csv('param_table_all_cleaned.csv')
 
 #######COKRIGING DATA#############
 import os
