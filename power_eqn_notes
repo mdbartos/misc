@@ -1,15 +1,46 @@
 #Rutberg
 
+2.1: k_lat = 1 - k_sens
+
+2.2: W_evap*h = k_lat*Q_load
+
+2.20: k_lat = k_evap* h/(Cp*T_cond)
+
+Leung:
+
+2.21: Q_load + W_mu*h_mu = G*(h_a_out - h_a_in)
+2.22: W_mu = W_evap = G(humidity_ratio_out - humidity_ratio_in)
+
+G =  Dry air mass flow rate
+
+Poppe:
+
+Mass_transfer_flux = Kd*(sat_humidity_ratio - air_humidity_ratio)
+
+Convection_Heat_Flux = K(Tw - Ta)
+
+Lef = K/(Kd*Cp,a)
+
+Me = Kd*A/W
+
+Lef = Lewis Factor (0.5-1.3; 0.92 accurate)
+
+Lef = 0.865^(2/3) * [ ((w_sw + d)/(w+d) - 1) / ln((w_sw + d)/(w+d)) ]
+
+d = 0.622 (molecular wt of water/molecular wt of air)
+w_ws = saturated humidity ratio
+w = humidity ratio
+
 For once-through cooling system:
 
-klat = (1 + g/B + (4esT^3)/(hfB))^-1
+klat = (1 + g/B + (4*e*s*T^3)/(h*f*B))^-1
 
 g = psychrometric constant (pa/k) [function of atm pressure]
 B = d vp/d T (constant)
 e = emissivity of water surface (0.9)
 s = stefan-boltzmann constant (5.67*10^-14 MJ/m2-s-K4)
 T = water temperature
-h = 
+h = latent heat of vaporization (2.45 MJ/kg)
 f = mass transfer coefficient
 
 f = (1.0 + v)*10^-8
