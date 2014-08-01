@@ -1,0 +1,9 @@
+#http://www.endmemo.com/chem/vaporpressurewater.php
+
+Vapor Pressure of Water calculator Formula:
+   P = 10^(A-B/(C+T))
+Where:
+   P: Vapor Pressure of Water
+   T: Water Temperature, in Celsius
+  A,B,C: Antoine Constants for Water. When water temperature in the range of 1 - 100 Celsius A=8.07131, B=1730.63, C= 233.426;
+          when the temperature in the range of 99 - 374 degree Celsius, A=8.14019, B=1810.94 and C=244.485.
