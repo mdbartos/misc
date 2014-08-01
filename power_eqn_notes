@@ -7,6 +7,9 @@
 2.19: W_evap = k_evap*W_cond
 2.20: k_lat = k_evap* h/(Cp*T_cond)
 
+"Makeup water temperature is barely significant"
+
+ASHRAE: "evaporation rate at typical design conditions is approximately 1% of the water flow rate for each 12.5 F of water temperature range [implying a constant klat of 0.84]"
 Leung:
 
 2.21: Q_load + W_mu*h_mu = G*(h_a_out - h_a_in)
