@@ -1,3 +1,21 @@
+#Rutberg
+
+For once-through cooling system:
+
+klat = (1 + g/B + (4esT^3)/(hfB))^-1
+
+g = psychrometric constant (pa/k) [function of atm pressure]
+B = d vp/d T (constant)
+e = emissivity of water surface (0.9)
+s = stefan-boltzmann constant (5.67*10^-14 MJ/m2-s-K4)
+T = water temperature
+h = 
+f = mass transfer coefficient
+
+f = (1.0 + v)*10^-8
+
+v = wind speed
+
 #http://www.endmemo.com/chem/vaporpressurewater.php
 
 Vapor Pressure of Water calculator Formula:
