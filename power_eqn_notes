@@ -1,0 +1,53 @@
+#http://www.endmemo.com/chem/vaporpressurewater.php
+
+Vapor Pressure of Water calculator Formula:
+   P = 10^(A-B/(C+T))
+Where:
+   P: Vapor Pressure of Water
+   T: Water Temperature, in Celsius
+  A,B,C: Antoine Constants for Water. When water temperature in the range of 1 - 100 Celsius A=8.07131, B=1730.63, C= 233.426;
+          when the temperature in the range of 99 - 374 degree Celsius, A=8.14019, B=1810.94 and C=244.485.
+          
+#Diehl
+
+  CD = TH - SL - NE - AL - XH
+
+    CD  = condenser duty; 
+    TH  = total heat introduced into the plant, from fuel or other sources; 
+    SL  = heat lost through the stack (exhaust); 
+    NE  = net electrical generation; 
+    AL  = heat lost to the air from plant equipment;
+    XH  = heat exported from combined heat and power plants
+
+  AL ~ TH*0.02
+
+  XH = TH - EH
+
+    EH = reported electric heat
+
+FOR STEAM TURBINE:
+
+  SL ~ TH*(1-BE)
+
+    BE = Boiler Efficiency at 100% load (must be between 75-94%)
+    
+FOR COMBINED CYCLE:
+  
+  SL ~ TH*0.2
+  
+    NE = CA + CT
+    
+      CA = Combined Cycle, Steam Turbine
+      CT = Combined Cycle, Combustion Turbine
+      
+For NUCLEAR:
+  
+  TH = NE/TE
+  
+    TE = Thermal Efficiency
+    
+For GEOTHERMAL:
+
+  TH = NE/0.16
+
+
