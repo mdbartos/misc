@@ -11,7 +11,7 @@ db_mash
 
 db_mash is a simple utility that can import/export, and combine tabular datastructures. It can read csv, txt, dbf and xls files, and output the combined tables to a database (currently hdf5, pickle, or sqlite structures are supported). To use the script, start by instantiating the class. Only one parameter is required--the name of the database that you want to create. For example:
 
-b = mash_db('phx')
+b = mash_db('my_database')
 
 The class 'mash_db' has ten functions:
 
@@ -38,16 +38,14 @@ The class 'mash_db' has ten functions:
 + clear_mem: clears memory by initializing 'self.d', 'self.spec_d' and 'self.tablestr_d'.
 
 
-Note that dataframes can be accessed directly using the 'self.d' dictionary. So let's assume that you already imported the 'parcels' table from the assessor database using the import_csv function.
-
-If you want to access the dataframe 'parcels' from the assessor database, simply call it like you would a dictionary key. Using the instance 'b' of the mash_sqlite class shown above:
+Note that dataframes can be accessed directly using the 'self.d' dictionary. So let's assume that you already imported the 'foo' table from the current directory using the import_csv function. If you want to access the dataframe 'foo', simply call it like you would a dictionary key. Using the instance 'b' of the mash_db class shown above:
 
 
-b.d['parcels']
+b.d['foo']
 
-^^(should return the pandas dataframe corresponding to the parcels table)
+^^(should return the pandas dataframe corresponding to the 'foo' table)
 
-Thus, if you need to concatenate two dataframes together (as with the LA database), you can do it very easily using pandas:
+Thus, if you need to concatenate two dataframes together, you can do it very easily using pandas:
 
 b.d['dataframe'] = pandas.concat([b.d['dataframe1'],b.d['dataframe2'],b.d['dataframe3']], ignore_index=True)
 
