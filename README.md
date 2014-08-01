@@ -5,7 +5,9 @@ Miscellaneous scripts and utilities.
 
 ----------
 
-+ db_mash
+
+db_mash
+----
 
 db_mash is a simple utility that can import/export, and combine tabular datastructures. It can read csv, txt, dbf and xls files, and output the combined tables to a database (currently hdf5, pickle, or sqlite structures are supported). To use the script, start by instantiating the class. Only one parameter is required--the name of the database that you want to create. For example:
 
