@@ -4,6 +4,7 @@
 
 2.2: W_evap*h = k_lat*Q_load
 
+2.19: W_evap = k_evap*W_cond
 2.20: k_lat = k_evap* h/(Cp*T_cond)
 
 Leung:
