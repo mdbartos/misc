@@ -24,20 +24,21 @@ class mash_db():
 				print fn
 				self.d.update({fn.split('.')[0] : pd.read_csv(fn)})
 
-	def import_xl(self):
+	def import_xl(self, **kwargs):
 		print "importing excel spreadsheets in current directory..."
 		xlsheets = {}
 		for fn in os.listdir('.'):
-			wb = xl.open_workbook(fn)
-			xlsheets.update({fn : wb.sheet_names()})
+			if fn.endswith('xls'):
+				wb = xl.open_workbook(fn)
+				xlsheets.update({fn : wb.sheet_names()})
 		
 		for i, k in xlsheets.items():
 			if len(k) == 1:
-				f = pd.read_excel(i, k[0], index_col=None, na_values=['NA'])
+				f = pd.read_excel(i, k[0], index_col=None, na_values=['NA'], **kwargs)
 				self.d.update({k[0] : f})
 			if len(k) > 1:
 				for j in k:
-					f = pd.read_excel(i, j, index_col=None, na_values=['NA'])
+					f = pd.read_excel(i, j, index_col=None, na_values=['NA'], **kwargs)
 					self.d.update({'%s_%s' % (i.split('.')[0], j) : f})
 		
 	def import_dbf(self):
