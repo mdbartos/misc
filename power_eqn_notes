@@ -35,6 +35,16 @@ d = 0.622 (molecular wt of water/molecular wt of air)
 w_ws = saturated humidity ratio
 w = humidity ratio
 
+#http://www.vaisala.com/Vaisala%20Documents/Application%20notes/Humidity_Conversion_Formulas_B210973EN-F.pdf
+
+X = B·Pw /(Ptot - Pw) [g/kg]
+
+X = mass of water/mass of dry air
+Pw = water vapor pressure
+Ptot = ambient air pressure
+B = molecular wt of water/ molecular wt of other gases (621.9907 g/kg for air) 
+
+
 For once-through cooling system:
 
 klat = (1 + g/B + (4*e*s*T^3)/(h*f*B))^-1
