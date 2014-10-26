@@ -1,0 +1,25 @@
+mplayer -ao null -ss 0:00:00 -endpos 10 phx_2070.mp4 -vo jpeg:outdir=jpeg_dir_2070:quality=100
+
+for i in ./jpeg_dir_2070/*.jpg; do convert "$i" "${i%.jpg}.gif"; done
+
+cd jpeg_dir_2070
+
+mogrify -crop 635x468+161+77 +repage *.gif
+
+cd ..
+
+gifsicle --delay=5 --colors 256 --optimize=03 --loop ./jpeg_dir_2070/*.gif > phx_2070.gif
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~`
+
+mplayer -ao null -ss 0:00:00 -endpos 10 phx_2010.mp4 -vo jpeg:outdir=jpeg_dir_2010:quality=100
+
+for i in ./jpeg_dir_2010/*.jpg; do convert "$i" "${i%.jpg}.gif"; done
+
+cd jpeg_dir_2010
+
+mogrify -crop 635x468+161+77 +repage *.gif
+
+cd ..
+
+gifsicle --delay=5 --colors 256 --optimize=03 --loop ./jpeg_dir_2010/*.gif > phx_2010.gif
