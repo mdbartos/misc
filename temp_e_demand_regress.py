@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 import os
 import re
+import datetime
+import time
 
 basepath = '/home/akagi/Documents/wecc_form_714'
 
@@ -36,10 +38,53 @@ def build_paths():
             dirstr = ' '.join(os.listdir(pathstr))
 #            print dirstr
             for u in util.keys():
-                srcstr = '%s\d\d' % (u)
+                if not u in df_path_d:
+                    df_path_d.update({u : {}})
+                srcstr = '%s\d\d.dat' % (u)
  #               print srcstr
                 match = re.search(srcstr, dirstr, re.I)
-                print type(match.group())
+#                print type(match.group())
                 rpath = pathstr + '/' + match.group()
+                df_path_d[u].update({y : rpath})
         elif y == 2006:
             pathstr = basepath + '/' + path_d[y]
+            for u in util.keys():
+                if not u in df_path_d:
+                    df_path_d.update({u : {}})
+                df_path_d[u].update({y : pathstr})
+
+df_d = {}
+
+def build_df():
+    for u in df_path_d.keys():
+        df = pd.DataFrame()
+        for y in df_path_d[u].keys():
+            if y < 2006:
+                print df_path_d[u][y]
+                f = open(df_path_d[u][y])
+                r = f.readlines()
+                r = [g.replace('\t', '      ') for g in r if len(g) > 70]
+                for i in range(len(r)-1):
+                    entry = [r[i], r[i+1]]
+                    mo = int(r[i][:2])
+                    day = int(r[i][2:4])
+                    yr = r[i][4:6]
+                    if yr[0] == '0':
+                        yr = int('20' + yr)
+                    else:
+                        yr = int('19' + yr)
+
+                    am = [int(j) for j in entry[0][20:].split()]
+                    pm = [int(j) for j in entry[1][20:].split()]
+                    ampm = am + pm
+                    entry_df = pd.DataFrame()
+                    dt_ix = pd.date_range(start=datetime.datetime(yr, mo, day, 0), end=datetime.datetime(yr, mo, day, 23), freq='H')
+                    entry_df['load'] = ampm
+#                    print entry_df
+                    entry_df.index = dt_ix
+                    df = df.append(entry_df)
+#                    print entry_df
+            elif y == 2006:
+                pass
+
+        df_d.update({u : df})
