@@ -32,6 +32,6 @@ quantukmoc = [c.iloc[:,1].quantile(float(i)/100) for i in range(1, 101)]
 quantechamc = [c.iloc[:,2].quantile(float(i)/100) for i in range(1, 101)]
 
 #plot(range(len(quanthist)), quanthist)
-#hist(histo['wspd'], bins=100)
-#hist(ukmo_a1b['wspd'].iloc[:22645], bins=100, alpha=0.75)
+hist(histo['wspd'], bins=100)
+hist(ukmo_a1b['wspd'].iloc[:22645], bins=100, alpha=0.75)
 
