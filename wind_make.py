@@ -8,7 +8,7 @@ import datetime
 #nrel_path = '/home/tabris/Downloads/nrel_wind'
 
 class make_wind():
-    def __init__(self, windpath='/home/akagi/Dropbox/Southwest Heat Vulnerability Team Share/ppdb_data/USGS_wind.csv', nrel_path = '/home/akagi/Desktop/nrel_wind'):
+    def __init__(self, windpath='/home/tabris/Dropbox/Southwest Heat Vulnerability Team Share/ppdb_data/USGS_wind.csv', nrel_path = '/home/tabris/Downloads/nrel_wind'):
         self.windpath = windpath
         self.nrel_path = nrel_path
         self.df = pd.read_csv(self.windpath)
@@ -21,21 +21,21 @@ class make_wind():
 
         self.fut_timeslicer = pd.date_range(start=datetime.datetime(2040,1,1), end=datetime.datetime(2060,1,1), freq='10min')
 
-        hist_df = pd.DataFrame(index=self.hist_timeslicer)
-        hist_df['year'] = [i.year for i in hist_df.index]
-        hist_df['month'] = [i.month for i in hist_df.index]
-        hist_df['day'] = [i.day for i in hist_df.index]
-        hist_df['hour'] = [i.hour for i in hist_df.index]
-        hist_df['minute'] = [i.minute for i in hist_df.index]
+        self.hist_df = pd.DataFrame(index=self.hist_timeslicer)
+        self.hist_df['year'] = [i.year for i in self.hist_df.index]
+        self.hist_df['month'] = [i.month for i in self.hist_df.index]
+        self.hist_df['day'] = [i.day for i in self.hist_df.index]
+        self.hist_df['hour'] = [i.hour for i in self.hist_df.index]
+        self.hist_df['minute'] = [i.minute for i in self.hist_df.index]
 
-        fut_df = pd.DataFrame(index=self.fut_timeslicer)
-        fut_df['year'] = [i.year for i in fut_df.index]
-        fut_df['month'] = [i.month for i in fut_df.index]
-        fut_df['day'] = [i.day for i in fut_df.index]
-        fut_df['hour'] = [i.hour for i in fut_df.index]
-        fut_df['minute'] = [i.minute for i in fut_df.index]
+        self.fut_df = pd.DataFrame(index=self.fut_timeslicer)
+        self.fut_df['year'] = [i.year for i in self.fut_df.index]
+        self.fut_df['month'] = [i.month for i in self.fut_df.index]
+        self.fut_df['day'] = [i.day for i in self.fut_df.index]
+        self.fut_df['hour'] = [i.hour for i in self.fut_df.index]
+        self.fut_df['minute'] = [i.minute for i in self.fut_df.index]
 
-    def make_wind_outfiles(self, forcingpath='/home/akagi/Desktop/wind', outpath='/home/akagi/Desktop/wind_out'):
+    def make_wind_outfiles(self, forcingpath='/home/chesterlab/Bartos/VIC/output/wind', outpath='/home/tabris/Desktop/wind_out'):
         for i in self.g.index:
             nrel_idx = i[0]
             mpower_coeff = i[1]
@@ -52,9 +52,9 @@ class make_wind():
 
 ########## NREL CURVE ##########################
 
-            nrel_2004 = pd.read_csv('%s/%s/%s.csv' % (nrel_path, 2004, nrel_idx), skiprows=1, names=['date', 'wind', 'mw', 'score', 'correct'])[['date', 'wind']]
-            nrel_2005 = pd.read_csv('%s/%s/%s.csv' % (nrel_path, 2005, nrel_idx), skiprows=1, names=['date', 'wind', 'mw', 'score', 'correct'])[['date', 'wind']]
-            nrel_2006 = pd.read_csv('%s/%s/%s.csv' % (nrel_path, 2006, nrel_idx), skiprows=1, names=['date', 'wind', 'mw', 'score', 'correct'])[['date', 'wind']]
+            nrel_2004 = pd.read_csv('%s/%s/%s.csv' % (self.nrel_path, 2004, nrel_idx), skiprows=1, names=['date', 'wind', 'mw', 'score', 'correct'])[['date', 'wind']]
+            nrel_2005 = pd.read_csv('%s/%s/%s.csv' % (self.nrel_path, 2005, nrel_idx), skiprows=1, names=['date', 'wind', 'mw', 'score', 'correct'])[['date', 'wind']]
+            nrel_2006 = pd.read_csv('%s/%s/%s.csv' % (self.nrel_path, 2006, nrel_idx), skiprows=1, names=['date', 'wind', 'mw', 'score', 'correct'])[['date', 'wind']]
 
             nrel = pd.concat([nrel_2004, nrel_2005, nrel_2006])
             nrel['date'] = pd.to_datetime(nrel['date'])
@@ -71,13 +71,17 @@ class make_wind():
 ######### GET FORCINGS #########################
             scen_forcings = {}
             for j in ['hist', 'echam_a1b', 'echam_a2', 'echam_b1', 'ukmo_a1b', 'ukmo_a2', 'ukmo_b1']:
-                forcings = pd.read_csv('%s/%s/full_data_%s_%s' % (forcingpath, j, lat_grid, lon_grid), skiprows=6, sep='\t', names=['year', 'month', 'day', 'out_wind', 'out_density', 'out_pressure', 'out_vp', 'out_air_temp'])[['year', 'month', 'day', 'out_density']]
+                forcings = pd.read_csv('%s/%s/full_data_%s_%s' % (forcingpath, j, lat_grid, lon_grid), skiprows=6, sep='\t', names=['year', 'month', 'day', 'out_wind', 'out_density', 'out_pressure', 'out_vp', 'out_air_temp'])[['year', 'month', 'day', 'out_density', 'out_air_temp']]
                 scen_forcings.update({j : forcings})
 
 ######### MAKE OUTFILES ########################
             
             for k in scen_forcings.keys():
-                m = pd.merge(hist_df, scen_forcings[k], on=['year', 'month', 'day'])[['year', 'month', 'day', 'hour', 'minute', 'out_density', 'out_air_temp']]
+                if k == 'hist':
+                    m = pd.merge(self.hist_df, scen_forcings[k], on=['year', 'month', 'day'])[['year', 'month', 'day', 'hour', 'minute', 'out_density', 'out_air_temp']]
+                else:
+                    m = pd.merge(self.fut_df, scen_forcings[k], on=['year', 'month', 'day'])[['year', 'month', 'day', 'hour', 'minute', 'out_density', 'out_air_temp']]
+
                 m = pd.merge(m, h, on=['month', 'day', 'hour', 'minute'])
                 m = pd.merge(m, hmin, on=['month', 'day', 'hour', 'minute'])
                 m = pd.merge(m, hmax, on=['month', 'day', 'hour', 'minute'])
@@ -107,7 +111,9 @@ class make_wind():
                 m['capmin_mw'].loc[m['windmin_th'] <= 3.0] = 0.0
                 m['capmin_mw'].loc[m['windmin_th'] >= 25.0] = 0.0
                 m['capmin_mw'].loc[m['capmin_mw'] >= multiplier*mw] = multiplier*mw
-                
+               
+                m = m.groupby(['year', 'month', 'day', 'hour']).mean().reset_index()
+
                 if not os.path.exists('%s/%s' % (outpath, k)):
                     os.mkdir('%s/%s' % (outpath, k))
 
