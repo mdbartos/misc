@@ -125,24 +125,21 @@ class make_solar():
 
 #### COMBINE CURVE WITH TEMPERATURE FORCINGS
 
-	def make_solar_outfiles(sunypath, forcingpath):
+	def make_solar_outfiles(self, sunypath, forcingpath, outpath):
 		for i in self.solar.index:
 			forcingstr = 'data_%s_%s' % (self.solar.loc[i, 'lat_grid'], self.solar.loc[i, 'lon_grid'])
-			sunystr = 'SUNY_%s%s.csv' % (str(abs(self.solar.loc[i, 'lat_suny'])).replace('.', ''), str(abs(self.solar.loc[i, 'lon_suny'])).replace('.', ''))
+			sunystr = 'SUNY_%s%s.csv' % (str(abs(self.solar.loc[i, 'lon_suny'])).replace('.', ''), str(abs(self.solar.loc[i, 'lat_suny'])).replace('.', ''))
 		
-		#	sunypath = '/home/akagi/Desktop/suny_solar/'
-			#sunyfile = 'SUNY_103153215.csv'
 			suny = pd.read_csv('%s/%s' % (sunypath, sunystr))
 
 			suny = suny.drop(suny.loc[suny['Uglo'] < 0].index)
 
 			suny['date'] = pd.to_datetime(suny['Date'])
-			#suny['doy'] = [i.timetuple().tm_yday for i in suny['date']]
 			del suny['Date']
 
-			suny['year'] = [i.year for i in suny['date']]
-			suny['month'] = [i.month for i in suny['date']]
-			suny['day'] = [i.day for i in suny['date']]
+			suny['year'] = [j.year for j in suny['date']]
+			suny['month'] = [j.month for j in suny['date']]
+			suny['day'] = [j.day for j in suny['date']]
 
 			a = suny.groupby(['year', 'month', 'day']).max().reset_index()
 			b = a.groupby(['month', 'day']).mean()
@@ -153,16 +150,20 @@ class make_solar():
 				
 				m = pd.merge(dmax, forcing, on=['month', 'day']).sort(['year', 'month', 'day'])
 
-				m['CAP_MW'] = (m['Uglo']/1000.0)*0.12*(1-0.0045*(m['tmax'] - 25.0))
-
+				m['CAP_MW'] = self.solar.loc[i,'Nameplate Capacity (MW)']*(m['Uglo']/1000.0)*(1-0.0045*(m['tmax'] - 25.0))
+				m['CAP_MW'].loc[m['CAP_MW'] >= self.solar.loc[i,'Nameplate Capacity (MW)']] = self.solar.loc[i,'Nameplate Capacity (MW)']  
+				m = m[['year', 'month', 'day', 'CAP_MW']]
+				m.to_csv('%s/%s/%s.%s' % (outpath,scen,scen,i) , sep='\t')
 
 #####################################################
 
 #for x in b.reg_d.keys():
 #	b.extract_solar_hist(x, '/media/melchior/BALTHASAR/nsf_hydro/pre/source_data/source_hist_forcings/active/master', '/home/melchior/Desktop/solar')
 
-for x in b.reg_d.keys():
-	for sc in ['a1b', 'a2', 'b1']:
-		for m in ['mpi_echam5.3', 'ukmo_hadcm3.1']:
-			b.extract_solar_nc(sc, m, x, '/home/melchior/Desktop/solar')
+#for x in b.reg_d.keys():
+#	for sc in ['a1b', 'a2', 'b1']:
+#		for m in ['mpi_echam5.3', 'ukmo_hadcm3.1']:
+#			b.extract_solar_nc(sc, m, x, '/home/melchior/Desktop/solar')
 
+b = make_solar()
+b.make_solar_outfiles('/home/melchior/Desktop/suny_solar', '/home/melchior/Desktop/solar', '/home/melchior/Desktop/solar_out')
