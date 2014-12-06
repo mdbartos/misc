@@ -22,8 +22,8 @@ def transys_parser(filename, outfilename, ncols, **kwargs):
 
 #### FUNCTION PARAMETERS:
 # filename = input file name
-# ncols = number of columns
 # outfile name = name of output file
+# ncols = number of columns
 # **kwargs = optional keyword arguments: in this case, column names.
 
 #### EXAMPLE USAGE:
