@@ -99,28 +99,28 @@ class make_wind():
     ### med power
                     m['wind_th'] = m['wind']*(tower_h/100.0)**0.143
                     m['cap_mw'] = multiplier*0.5*(mpower_coeff)*(m['wind_th']**3)*(rotor_s_a)*(m['out_density'])/1000000
-                    m['cap_mw'].loc[m['wind_th'] >= rated_wspd] = multiplier*mw
+#                    m['cap_mw'].loc[m['wind_th'] >= rated_wspd] = multiplier*mw
                     m['cap_mw'].loc[m['wind_th'] <= 3.0] = 0.0
                     m['cap_mw'].loc[m['wind_th'] >= 25.0] = 0.0
-                    m['cap_mw'].loc[m['cap_mw'] >= multiplier*mw] = multiplier*mw
+                    m['cap_mw'].loc[m['cap_mw'] >= mw] = mw
 
     ### hi power
 
                     m['windmax_th'] = m['windmax']*(tower_h/100.0)**0.143
                     m['capmax_mw'] = multiplier*0.5*(mpower_coeff)*(m['windmax_th']**3)*(rotor_s_a)*(m['out_density'])/1000000
-                    m['capmax_mw'].loc[m['windmax_th'] >= rated_wspd] = multiplier*mw
+#                    m['capmax_mw'].loc[m['windmax_th'] >= rated_wspd] = multiplier*mw
                     m['capmax_mw'].loc[m['windmax_th'] <= 3.0] = 0.0
                     m['capmax_mw'].loc[m['windmax_th'] >= 25.0] = 0.0
-                    m['capmax_mw'].loc[m['capmax_mw'] >= multiplier*mw] = multiplier*mw
+                    m['capmax_mw'].loc[m['capmax_mw'] >= mw] = mw
 
     ### lo power
 
                     m['windmin_th'] = m['windmin']*(tower_h/100.0)**0.143
                     m['capmin_mw'] = multiplier*0.5*(mpower_coeff)*(m['windmin_th']**3)*(rotor_s_a)*(m['out_density'])/1000000
-                    m['capmin_mw'].loc[m['windmin_th'] >= rated_wspd] = multiplier*mw
+#                    m['capmin_mw'].loc[m['windmin_th'] >= rated_wspd] = multiplier*mw
                     m['capmin_mw'].loc[m['windmin_th'] <= 3.0] = 0.0
                     m['capmin_mw'].loc[m['windmin_th'] >= 25.0] = 0.0
-                    m['capmin_mw'].loc[m['capmin_mw'] >= multiplier*mw] = multiplier*mw
+                    m['capmin_mw'].loc[m['capmin_mw'] >= mw] = mw
                 
                     m = m.groupby(['year', 'month', 'day', 'hour']).mean().reset_index()[['year', 'month', 'day', 'hour', 'cap_mw', 'capmin_mw', 'capmax_mw']]
 
@@ -129,7 +129,7 @@ class make_wind():
                     
                     out_fn = '%s_%s' % (k, nrel_idx)
                     checked_fn = self.check_filename('%s/%s' % (outpath, k), out_fn, 0)
-                    m.to_csv('%s/%s/%s' % (outpath, k, checked_fn), sep='\t')
+                    m.to_csv('%s/%s/%s' % (outpath, k, checked_fn), sep='\t', float_format='%.3f')
 
             except:
                 print 'Error on %s' % (nrel_idx)
