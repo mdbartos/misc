@@ -17,6 +17,8 @@ def transys_parser(filename, outfilename, ncols, **kwargs):
             outfile[n] = sub_df
 
     outfile.to_csv(outfilename)
+    
+    return outfile
 
 
 
