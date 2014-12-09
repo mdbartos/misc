@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-def transys_parser(filename, outfilename, ncols, **kwargs):
+def trnsys_parser(filename, outfilename, ncols, **kwargs):
 
     infile = pd.read_csv(filename, skiprows=2, header=None)
 
@@ -30,9 +30,9 @@ def transys_parser(filename, outfilename, ncols, **kwargs):
 
 #### EXAMPLE USAGE:
 
-#transys_parser('file.csv', 'newfile.csv', 5)
+#trnsys_parser('file.csv', 'newfile.csv', 5)
 
 #### COLUMN NAMES CAN BE SUPPLIED OPTIONALLY:
 
-#transys_parser('file.csv', 'newfile.csv', 5, col_names=['time', 'node1', 'node2', 'node3', 'outside_temp'])
+#trnsys_parser('file.csv', 'newfile.csv', 5, col_names=['time', 'node1', 'node2', 'node3', 'outside_temp'])
 
