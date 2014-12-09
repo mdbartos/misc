@@ -3,7 +3,7 @@ import numpy as np
 
 def transys_parser(filename, outfilename, ncols, **kwargs):
 
-    infile = pd.read_csv(filename, header=None)
+    infile = pd.read_csv(filename, skiprows=2)
 
     outfile = pd.DataFrame(index=range(len(infile)/ncols))
 
