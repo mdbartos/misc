@@ -1,9 +1,17 @@
 import pandas as pd
 import numpy as np
 
-def trnsys_parser(filename, outfilename, ncols, **kwargs):
+def trnsys_parser(filename, outfilename, **kwargs):
 
-    infile = pd.read_csv(filename, skiprows=2, header=None)
+    f = open(filename, 'r')
+    r = f.readlines()[0].replace(' ', '').replace(',', '').replace('\r', '').replace('\n', '')
+    f.close()
+    col_names = [i for i in r.split('\t') if i != '']
+    ncols = len(col_names)
+    print col_names
+    print ncols
+    
+    infile = pd.read_csv(filename, skiprows=2, header=None, **kwargs)
 
     outfile = pd.DataFrame(index=range(len(infile)/ncols))
 
@@ -11,10 +19,7 @@ def trnsys_parser(filename, outfilename, ncols, **kwargs):
         sub_idx = range(n, len(infile), ncols)
         sub_df = np.asarray(infile.iloc[sub_idx])
 
-        if 'col_names' in kwargs:
-            outfile[kwargs['col_names'][n]] = sub_df
-        else:
-            outfile[n] = sub_df
+        outfile[col_names[n]] = sub_df
 
     outfile.to_csv(outfilename)
     
