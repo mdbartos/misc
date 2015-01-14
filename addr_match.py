@@ -7,7 +7,7 @@ from fuzzywuzzy import process
 #match flags: z: zip, n: street number, d: direction, s: street name, t: street type
 
 class addr_match():
-    def __init__(self, match_path, match_fields={'address':'SITUSADD', 'zip': 'SZIP', 'id': 'APN'}, **kwargs):
+    def __init__(self, match_path, match_fields={'address':'SITUSADD', 'zip': 'SZIP', 'id': 'APN', 'lat':'lat', 'lon':'lon'}, **kwargs):
             
             self.match_fields = match_fields
             df = pd.read_csv(match_path, **kwargs)
@@ -59,7 +59,7 @@ class addr_match():
 	    self.match_df = pd.concat([self.match_df, street_loc], axis=1)
 	    self.match_df['STYPE'] = self.match_df['STYPE'].str.replace(' ', '')
 
-	    self.match_wf = self.match_df.drop_duplicates(subset=[self.match_fields['address']])[[self.match_fields['address'], self.match_fields['id'], 'SNUM', 'DIR', 'STREET', 'STYPE', self.match_fields['zip']]]
+	    self.match_wf = self.match_df.drop_duplicates(subset=[self.match_fields['address']])[[self.match_fields['address'], self.match_fields['id'], 'SNUM', 'DIR', 'STREET', 'STYPE', self.match_fields['zip'], 'lat', 'lon']]
 
 	    self.match_wf[self.match_fields['address']] = self.match_wf[self.match_fields['address']].str.replace('.', '').str.replace(',', '')
 
@@ -69,7 +69,7 @@ class addr_match():
     def target_init(self, target_path, match_fields={'address':'DRESADDRES', 'zip':'DRESZIP', 'id':'FID_1'}, **kwargs):
 
 	    self.match_fields['t_id'] = match_fields['id']
-	    self.target_df = pd.read_csv(target_path, **kwargs).rename(columns={match_fields['address'] : self.match_fields['address'], match_fields['zip'] : self.match_fields['zip']}).dropna(subset=[self.match_fields['address']]).set_index(self.match_fields['t_id'], drop=False)
+	    self.target_df = pd.read_csv(target_path, **kwargs).rename(columns={match_fields['address'] : self.match_fields['address'], match_fields['zip'] : self.match_fields['zip']}).dropna(subset=[self.match_fields['address']]).set_index(self.match_fields['t_id'], drop=False).drop_duplicates(self.match_fields['t_id'])
 
 	    self.target_df[self.match_fields['address']] = self.target_df[self.match_fields['address']].str.upper().str.replace('.', '').str.replace(',', '')
 
@@ -118,7 +118,7 @@ class addr_match():
             comp_firstpass['STYPE'] = comp_firstpass['STYPE'].map(pd.Series(self.abbrv.set_index(0)[1])).fillna(comp_firstpass['STYPE'])
 
 
-            #### SECOND PASS--DIFFERENT CARDINAL DIRECTION
+            #### SECOND PASS--DIFFERENT CARDINAL DIRECTION/STREET EXTENSION
 
             secondpass = pd.merge(comp_firstpass, self.match_wf, on=['SNUM', 'DIR', 'STREET', 'STYPE'], how='inner', suffixes=['_TARGET', '_MATCH']).drop_duplicates(subset=[self.match_fields['t_id']])
 
@@ -140,19 +140,32 @@ class addr_match():
 
             for i in test[self.match_fields['t_id']].unique():
                 t = test[test[self.match_fields['t_id']] == i]
-                lo = t[t['SNUM_DIFF'] < 0]
-                hi = t[t['SNUM_DIFF'] > 0]
+                ixmin_t = t['SNUM_ABS'].idxmin()
+                thirdpass = thirdpass.append(t.loc[ixmin_t])
 
-                if len(lo) > 0:
-                    ixmin_lo = lo['SNUM_ABS'].idxmin()
-                    thirdpass = thirdpass.append(t.loc[ixmin_lo])
+#            for i in test[self.match_fields['t_id']].unique():
+#                t = test[test[self.match_fields['t_id']] == i]
+#                lo = t[t['SNUM_DIFF'] < 0]
+#                hi = t[t['SNUM_DIFF'] > 0]
+#
+#                if len(lo) > 0:
+#                    ixmin_lo = lo['SNUM_ABS'].idxmin()
+#                    thirdpass = thirdpass.append(t.loc[ixmin_lo])
+#
+#                if len(hi) > 0:
+#                    ixmin_hi = hi['SNUM_ABS'].idxmin()
+#                    thirdpass = thirdpass.append(t.loc[ixmin_hi])
+#                    
+#            size1 = thirdpass.set_index('FID_1').loc[thirdpass.groupby('FID_1').size() == 1]
+#            sm1 = size1.loc[size1['SNUM_ABS'] < 100]
+#
+#            size2 = self.thirdpass.set_index('FID_1').loc[self.thirdpass.groupby('FID_1').size() == 2] 
 
-                if len(hi) > 0:
-                    ixmin_hi = hi['SNUM_ABS'].idxmin()
-                    thirdpass = thirdpass.append(t.loc[ixmin_hi])
+            self.thirdpass = thirdpass
+            thirdpass_matched = thirdpass.loc[thirdpass['SNUM_ABS'] < 100]
 
-            self.matched = pd.concat([self.matched, thirdpass.drop_duplicates(self.match_fields['t_id'])], axis=0) #### NEEDS TO BE FIXED
-            self.unmatched = self.unmatched.drop(thirdpass[self.match_fields['t_id']].unique())
+            self.matched = pd.concat([self.matched, thirdpass_matched.drop_duplicates(self.match_fields['t_id'])], axis=0) #### NEEDS TO BE FIXED
+            self.unmatched = self.unmatched.drop(thirdpass_matched[self.match_fields['t_id']].unique())
 
             comp_thirdpass = comp_secondpass[~comp_secondpass.index.isin(thirdpass[self.match_fields['t_id']].unique())]
 
@@ -233,7 +246,7 @@ class addr_match():
 
         fuzzy_matches = re_adzip.copy()
         fuzzy_matches['MATCH_ADD'] = ''
-        fuzzy_matches['MATCH_APN'] = ''
+        fuzzy_matches[self.match_fields['id']] = ''
         fuzzy_matches['MATCH_RATIO'] = 0.0
 
         #u_stnm = pd.Series(street_names.unique())
@@ -250,25 +263,80 @@ class addr_match():
             f_i = src_df.apply(lambda x: fuzz.ratio(srcadd, x)).idxmax()
             fuzzy_matches.loc[i, 'MATCH_RATIO'] = f_r
             fuzzy_matches.loc[i, 'MATCH_ADD'] = src_df.loc[f_i]
-            fuzzy_matches.loc[i, 'MATCH_APN'] = self.match_wf.loc[f_i, 'APN']
+            fuzzy_matches.loc[i, self.match_fields['id']] = self.match_wf.loc[f_i, self.match_fields['id']]
             print srcadd, f_r, f_i
-            
+
+        ninthpass = fuzzy_matches.loc[fuzzy_matches['MATCH_RATIO'] >= 85]
+        ninthpass = pd.merge(ninthpass, self.match_df[[self.match_fields['id'], 'lat', 'lon']], on=self.match_fields['id'])
+
 
         self.sixthpass = sixthpass
         self.seventhpass = seventhpass
         self.eighthpass = eighthpass
-        self.ninthpass = fuzzy_matches
+        self.ninthpass = ninthpass
 
-        self.matched = pd.concat([self.matched, fuzzy_matches], axis=0)
-        self.unmatched = self.unmatched.drop(fuzzy_matches[self.match_fields['t_id']].unique())
+        self.matched = pd.concat([self.matched, ninthpass], axis=0)
+        self.unmatched = self.unmatched.drop(ninthpass[self.match_fields['t_id']].unique())
 
 
 #### CALL METHOD
 
-b = addr_match('/home/akagi/Desktop/assessor/mc_assessor.txt', sep='\t')
+b = addr_match('/home/akagi/Desktop/assessor/mc_2014_full.csv', match_fields={'address':'SITE_ADDR', 'zip': 'S_ZIP', 'id': 'PARCEL_NUM', 'lat':'lat', 'lon':'lon'})
 b.abbrv_init('/home/akagi/Desktop/assessor/usps_abbrv.csv', header=None)
 b.prep_match()
 b.target_init('/home/akagi/Desktop/MCDPH_data/csv/DeathAddress.csv')
 b.wf_split()
 b.wf_parse()
 b.nwf_parse()
+
+b = addr_match('/home/akagi/Desktop/assessor/mc_2014_full.csv', match_fields={'address':'SITE_ADDR', 'zip': 'S_ZIP', 'id': 'PARCEL_NUM'})
+b.abbrv_init('/home/akagi/Desktop/assessor/usps_abbrv.csv', header=None)
+b.prep_match()
+b.target_init('/home/akagi/Desktop/MCDPH_data/csv/HDDAddress.csv', match_fields={'address':'ADD', 'zip':'ZIP', 'id':'RecID'})
+b.wf_split()
+b.wf_parse()
+b.nwf_parse()
+
+
+#### OLD
+#b = addr_match('/home/akagi/Desktop/assessor/mc_assessor.txt', sep='\t')
+#b.abbrv_init('/home/akagi/Desktop/assessor/usps_abbrv.csv', header=None)
+#b.prep_match()
+#b.target_init('/home/akagi/Desktop/MCDPH_data/csv/DeathAddress.csv')
+#b.wf_split()
+#b.wf_parse()
+#b.nwf_parse()
+
+h = b.unmatched[~b.unmatched['SITE_ADDR'].str.contains('#')]['SITE_ADDR']
+
+hh = h[h.str.contains("(\d+) *(N\.?|S\.?|E\.?|W\.?) +([A-Z,0-9, ,-,',\.]*)")]
+
+he = hh.str.extract("(\d+) *(N\.?|S\.?|E\.?|W\.?) +([A-Z,0-9, ,-,',\.]*) *( %s)$" % (b.abbrv_str)).dropna()
+
+he[3] = he[3].str.strip().map(pd.Series(b.abbrv.set_index(0)[1])).fillna(b.match_wf['STYPE']) 
+
+ha = he[0].str.cat(he[1], sep=' ').str.cat(he[2], sep=' ').str.cat(he[3], sep=' ')
+
+ha = pd.DataFrame(ha).rename(columns={0:'SITE_ADDR'}).dropna()
+ha['MATCH_RATIO'] = 0.0
+ha['MATCH_ADD'] = 0.0
+ha[b.match_fields['id']] = ''
+
+for i in ha.index:
+    srcadd = ha.loc[i, b.match_fields['address']]
+    
+    src_df = b.match_wf[b.match_fields['address']]
+
+    f_r = src_df.apply(lambda x: fuzz.ratio(srcadd, x)).max()
+    f_i = src_df.apply(lambda x: fuzz.ratio(srcadd, x)).idxmax()
+    
+    ha.loc[i, 'MATCH_RATIO'] = f_r
+    ha.loc[i, 'MATCH_ADD'] = src_df.loc[f_i]
+    ha.loc[i, b.match_fields['id']] = b.match_wf.loc[f_i, b.match_fields['id']]
+    print srcadd, f_r, f_i
+
+he = he.rename(columns={0:'SNUM', 1:'DIR', 2:'STREET', 3:'STYPE'})
+
+pd.merge(b.match_wf, he, on=['SNUM', 'DIR', 'STREET', 'STYPE'], how='inner')
+pd.merge(b.match_wf, he, on=['SNUM', 'DIR', 'STREET'], how='inner')
+
