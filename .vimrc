@@ -6,10 +6,10 @@ set history=700
 
 execute pathogen#infect()
 
-autocmd vimenter * NERDTree
+"autocmd vimenter * NERDTree
 
 "autocmd StdinReadPre * let s:std_in=1
-"autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
+autocmd VimEnter * if argc() == 0 && !exists("s:std_in") | NERDTree | endif
 autocmd bufenter * if (winnr("$") == 1 && exists("b:NERDTreeType") && b:NERDTreeType == "primary") | q | endif
 autocmd VimEnter * wincmd p
 map <C-n> :NERDTreeToggle<CR>
@@ -82,22 +82,31 @@ set title
 set linebreak
 set nobackup
 " set colorcolumn=+1
-set guifont=Terminus\ 10
+"set guifont=Terminus\ 10
 " set nobackup
 nnoremap gw "_yiw:s/\(\%#\w\+\)\(\_W\+\)\(\w\+\)/\3\2\1/<CR><C-o><C-l>
 
 vmap <C-c> "+y
 nmap <C-v> "+gP
-imap <C-v> "+gP
+"imap <C-v> "+gP
 nmap <C-a> ggVG
 vmap <C-x> "+x
+set pastetoggle=<F10>
+inoremap <C-v> <F10><C-r>+<F10>
+set clipboard=unnamedplus
 
+let g:indent_guides_enable_on_vim_startup = 0
+let g:indent_guides_auto_colors = 0
+autocmd VimEnter,Colorscheme * :hi IndentGuidesOdd  guibg=black   ctermbg=232
+autocmd VimEnter,Colorscheme * :hi IndentGuidesEven guibg=black ctermbg=233
+
+set foldmethod=indent
 " Colors and Fonts--------------------------------------------------------- {{{
 " Enable syntax highlighting
 syntax enable
 
-colorscheme elflord
-set background=dark
+"colorscheme elflord
+"set background=dark
 
 " Set extra options when running in GUI mode
 if has("gui_running")
@@ -182,6 +191,7 @@ vnoremap <Space> za
 
 " Make zO recursively open whatever fold we're in, even if it's partially open.
 nnoremap zO zczO
+"nnoremap <S-Space> zczO
 
 " "Focus" the current line.  Basically:
 "
@@ -193,24 +203,25 @@ nnoremap zO zczO
 " This mapping wipes out the z mark, which I never use.
 "
 " I use :sus for the rare times I want to actually background Vim.
-nnoremap <c-z> mzzMzvzz15<c-e>`z:Pulse<cr>
 
-function! MyFoldText() " {{{
-    let line = getline(v:foldstart)
+"nnoremap <c-z> mzzMzvzz15<c-e>`z:Pulse<cr>
 
-    let nucolwidth = &fdc + &number * &numberwidth
-    let windowwidth = winwidth(0) - nucolwidth - 3
-    let foldedlinecount = v:foldend - v:foldstart
-
-    " expand tabs into spaces
-    let onetab = strpart('          ', 0, &tabstop)
-    let line = substitute(line, '\t', onetab, 'g')
-
-    let line = strpart(line, 0, windowwidth - 2 -len(foldedlinecount))
-    let fillcharcount = windowwidth - len(line) - len(foldedlinecount)
-    return line . 'â€¦' . repeat(" ",fillcharcount) . foldedlinecount . 'â€¦' . ' '
-endfunction " }}}
-set foldtext=MyFoldText()
+"function! MyFoldText() " {{{
+"    let line = getline(v:foldstart)
+"
+"    let nucolwidth = &fdc + &number * &numberwidth
+"    let windowwidth = winwidth(0) - nucolwidth - 3
+"    let foldedlinecount = v:foldend - v:foldstart
+"
+"    " expand tabs into spaces
+"    let onetab = strpart('          ', 0, &tabstop)
+"    let line = substitute(line, '\t', onetab, 'g')
+"
+"    let line = strpart(line, 0, windowwidth - 2 -len(foldedlinecount))
+"    let fillcharcount = windowwidth - len(line) - len(foldedlinecount)
+"    return line . 'â€¦' . repeat(" ",fillcharcount) . foldedlinecount . 'â€¦' . ' '
+"endfunction " }}}
+"set foldtext=MyFoldText()
 
 " }}}
 " Filetype-specific ------------------------------------------------------- {{{
