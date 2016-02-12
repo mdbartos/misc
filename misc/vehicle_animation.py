@@ -26,10 +26,16 @@ vc = v.set_index('time')['id'].resample('d', how='unique').str.len()
 # Storm day
 
 storm = v.set_index('time').loc['20090625']
+storm = storm.tz_localize('US/Eastern').tz_convert('GMT')
+storm = storm.loc['20090625 19:00:00':'20090626 00:00:00']
 storm = storm.resample('s').interpolate()
-
 #storm['c'] = storm.wiper.map({0: 'blue', 1:'green', 2:'yellow', 3:'red', 4:'purple'})
 #storm = storm.resample('10s')
+
+stormtest = storm.reset_index().groupby(['id', 'time']).mean()
+
+stormtest = pd.concat([stormtest.loc[i].resample('s').interpolate() for i in stormtest.index.get_level_values(0).unique().astype(int)])
+
 
 #fig = plt.figure()
 
@@ -56,7 +62,9 @@ class AnimatedScatter(object):
 
     def setup_plot(self):
         """Initial drawing of the scatter plot."""
-        x, y = next(self.stream)
+        data = next(self.stream)
+        x, y = data[0]
+        t = data[1]
 	# self.backdrop = self.ax.plot([self.xbounds[0], self.xbounds[1]], [self.ybounds[0], self.ybounds[1]])
         for i in aa_geom.index:
             self.ax.plot(aa_geom.iloc[i].exterior.xy[0],
@@ -65,6 +73,7 @@ class AnimatedScatter(object):
         self.ax.axis([self.xbounds[0], self.xbounds[1],
 		      self.ybounds[0], self.ybounds[1]])
 
+        self.text = self.ax.text(self.xbounds[0], self.ybounds[0], '', horizontalalignment='left', verticalalignment='bottom')
         # For FuncAnimation's sake, we need to return the artist we'll be using
         # Note that it expects a sequence of artists, thus the trailing comma.
         return self.scat,
@@ -76,28 +85,32 @@ class AnimatedScatter(object):
 	data = data_src
 
         for i in data.index.unique():
-            xy = data.loc[i, [self.xlabels, self.ylabels]].values
+            xy = data.loc[i, [self.xlabels, self.ylabels]].values.T
             # s += 0.05 * (np.random.random(self.numpoints) - 0.5)
             # c += 0.02 * (np.random.random(self.numpoints) - 0.5)
-            yield xy
+            yield xy, i
 
     def update(self, i):
         """Update the scatter plot."""
         data = next(self.stream)
+        print data[1]
 
         # Set x and y data...
-        self.scat.set_offsets(data)
+        self.scat.set_offsets(data[0])
         # Set sizes...
         # self.scat._sizes = 300 * abs(data[2])**1.5 + 100
         # Set colors..
         # self.scat.set_array(data[3])
+        self.text.set_text(str(data[1]))
 
         # We need to return the updated artist for FuncAnimation to draw..
         # Note that it expects a sequence of artists, thus the trailing comma.
-        return self.scat,
+        return self.scat, self.text
 
     def show(self):
         plt.show()
+
+a = AnimatedScatter(storm, 'lon', 'lat')
 
 # Scatterplot animator 1
 
