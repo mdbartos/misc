@@ -113,21 +113,3 @@ def chords_read(domain, instrument_id, username, password, return_format='json',
         result = s.get(query_str).json()
         
     return result
-
-
-result = chords_read("storm", 1, "admin@chordsrt.com", "realtimedata", last=True)
-
-data = {"batVolt" : 111, "depth" : 5000}
-chords_write("storm", 1, data, key="wireless", test=True)
-
-chords_get_last("http://storm.chordsrt.com", 1, "admin@chordsrt.com", "realtimedata")
-
-"http://storm.chordsrt.com/instruments/1.csv?start=2015-08-01T00:30&end=2015-08-20T12:30"
-
-"http://storm.chordsrt.com/measurements/url_create?instrument_id=1&depth=100&batVolt=108&key=wireless&test"
-
-r = requests.get('http://ec2-54-148-229-234.us-west-2.compute.amazonaws.com:8086/query', params={'db' : 'poseidon', 'q' : "SELECT value FROM depth_sonic WHERE node_id='9'"})
-
-data = r.json()['results'][0]['series'][0]['values']
-
-# curl -v -G 'http://ec2-54-148-229-234.us-west-2.compute.amazonaws.com:8086/query?pretty=true' --data-urlencode "db=poseidon" --data-urlencode "q=SELECT value FROM depth_sonic WHERE node_id='9'"
