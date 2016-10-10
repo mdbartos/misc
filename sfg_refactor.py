@@ -27,101 +27,113 @@ edges = [('Y1', 'Y2', {'label': 1}),
 
 D.add_edges_from(edges)
 
-loops = list(nx.simple_cycles(D))
-DP = list(nx.all_simple_paths(D, 'Y1', 'Y5'))
+def sfg_to_tf(D, src, dest):
+    """
+    Parameters:
+    -----------
+    D : Directed graph with edges labeled
+    source : Source node
+    dest : Destination node
 
-n = 2  # group size
-m = 1  # overlap size
+    Returns:
+    --------
+    tf : Symbolic transfer function
+    """
+    loops = list(nx.simple_cycles(D))
+    DP = list(nx.all_simple_paths(D, src, dest))
 
-def edge_pairs(x, group_size, overlap_size, loop=True):
-    if loop:
-        y = x + [x[0]]
-    else:
-        y = x
-    return [y[i:i+group_size-overlap_size+1]
-            for i in range(0,len(y), group_size - overlap_size)][:-1] #hacky
+    n = 2  # group size
+    m = 1  # overlap size
 
-loop_edges = [[D.get_edge_data(*edge)['label'] for edge in edge_pairs(loop, 2, 1, loop=True)] for loop in loops]
+    def edge_pairs(x, group_size, overlap_size, loop=True):
+        if loop:
+            y = x + [x[0]]
+        else:
+            y = x
+        return [y[i:i+group_size-overlap_size+1]
+                for i in range(0,len(y), group_size - overlap_size)][:-1] #hacky
 
-path_edges = [[D.get_edge_data(*edge)['label'] for edge in edge_pairs(path, 2, 1, loop=False)] for path in DP]
+    loop_edges = [[D.get_edge_data(*edge)['label'] for edge in edge_pairs(loop, 2, 1, loop=True)] for loop in loops]
 
-gains = [j for j in [edges[i][2]['label'] for i in range(len(edges))]
- if isinstance(j, str)]
+    path_edges = [[D.get_edge_data(*edge)['label'] for edge in edge_pairs(path, 2, 1, loop=False)] for path in DP]
 
-g = {symbol: sym.symbols(symbol) for symbol in gains}
+    gains = [j for j in [edges[i][2]['label'] for i in range(len(edges))]
+    if isinstance(j, str)]
 
-for gain in g:
-    if gain.startswith('H'):
-        g[gain] = -1*g[gain]
+    g = {symbol: sym.symbols(symbol) for symbol in gains}
 
-loopset = pd.Series([set(loop) for loop in loops])
-loopmat = loopset.apply(lambda x: [x.isdisjoint(i) for i in loopset.values]).apply(pd.Series)
-loopmat.iloc[:,:] = np.triu(loopmat.values)
+    for gain in g:
+        if gain.startswith('H'):
+            g[gain] = -1*g[gain]
 
-loopmats = []
-loopmats.append(loopmat)
+    loopset = pd.Series([set(loop) for loop in loops])
+    loopmat = loopset.apply(lambda x: [x.isdisjoint(i) for i in loopset.values]).apply(pd.Series)
+    loopmat.iloc[:,:] = np.triu(loopmat.values)
 
-tuples = []
-tuples.append(np.column_stack(np.where(loopmat)))
+    loopmats = []
+    loopmats.append(loopmat)
 
-loopmat_new = loopmat
+    tuples = []
+    tuples.append(np.column_stack(np.where(loopmat)))
 
-for order in range(5):
-    r, c = np.where(loopmat_new)
-    r = loopmat_new.index[r]
-    if any([hasattr(elem, '__len__') for elem in r]):
-        l1 = pd.Series([set(loopset[list(i)].apply(lambda x: list(x)).sum())
-                        for i in r], index=r)
-        l2 = loopset[c]
-    else:
-        l1, l2 = loopset[r], loopset[c]
-    lu = pd.Series([l1.iloc[i].union(l2.iloc[i]) for i in range(len(l1))])
-    lu.index = list(zip(l1.index, l2.index))
-    loopmat_new = lu.apply(lambda x: [x.isdisjoint(i) for i in loopset.values]).apply(pd.Series)
-    # TODO TRIU DOESN'T WORK
-    # loopmat_new.iloc[:,:] = np.triu(loopmat_new.values)
-    if loopmat_new.values.any():
-        print (order + 2)
-        nr, nc = np.where(loopmat_new)
-        nr = loopmat_new.index[nr]
-        n_ix = np.column_stack([np.array(nr.tolist()), nc])
-        n_ix = np.unique(n_ix)
-        loopmats.append(loopmat_new)
-        tuples.append(n_ix)
-    else:
-        break
+    loopmat_new = loopmat
 
-
-nontouching_loop_edges = [np.asarray(loop_edges)[tup] for tup in tuples]
+    for order in range(5):
+        r = np.atleast_1d(tuples[-1][..., :-1])
+        r = r.reshape(-1, order+1)
+        c = np.atleast_1d(tuples[-1][..., -1])
+        if any([hasattr(elem, '__len__') for elem in r]):
+            l1 = pd.Series([set(loopset[list(i)].apply(lambda x: list(x)).sum())
+                            for i in r], index=r)
+            l2 = loopset[c]
+        else:
+            l1, l2 = loopset[r], loopset[c]
+        lu = pd.Series([l1.iloc[i].union(l2.iloc[i]) for i in range(len(l1))])
+        lu.index = tuple(map(tuple, np.column_stack([r, c])))
+        loopmat_new = lu.apply(lambda x: [x.isdisjoint(i) for i in loopset.values]).apply(pd.Series)
+        if loopmat_new.values.any():
+            print (order + 2)
+            nr, nc = np.where(loopmat_new)
+            nr = loopmat_new.index[nr]
+            n_ix = np.column_stack([np.array(nr.tolist()), nc])
+            n_ix = np.unique(n_ix)
+            loopmats.append(loopmat_new)
+            tuples.append(n_ix)
+        else:
+            break
 
 
-LS = {}
+    nontouching_loop_edges = [np.asarray(loop_edges)[tup] for tup in tuples]
 
-LS[1] = -1 * sum([np.prod([g[edge] for edge in loop]) for loop in loop_edges])
 
-g = pd.Series(g)
+    LS = {}
 
-for order in range(len(tuples)):
-    loop_order = nontouching_loop_edges[order]
-    if loop_order.ndim > 1:
-        LSi = sum([np.prod([g[i].product() for i in loop_order[j]]) for j in range(len(loop_order))])
-    else:
-        LSi = np.prod([np.prod([g[i] for i in loop_order[j]]) for j in range(len(loop_order))])
-    if ((order + 2) % 2) != 0:
-        LSi = -1 * LSi
-    LS[order + 2] = LSi
+    LS[1] = -1 * sum([np.prod([g[edge] for edge in loop]) for loop in loop_edges])
 
-delta = 1 + sum(LS.values())
+    g = pd.Series(g)
 
-delta_terms =[str(i) for i in delta.free_symbols]
+    for order in range(len(tuples)):
+        loop_order = nontouching_loop_edges[order]
+        if loop_order.ndim > 1:
+            LSi = sum([np.prod([g[i].product() for i in loop_order[j]]) for j in range(len(loop_order))])
+        else:
+            LSi = np.prod([np.prod([g[i] for i in loop_order[j]]) for j in range(len(loop_order))])
+        if ((order + 2) % 2) != 0:
+            LSi = -1 * LSi
+        LS[order + 2] = LSi
 
-out_expr = 0
+    delta = 1 + sum(LS.values())
 
-for path in path_edges:
-    S = np.prod([g[i] for i in path if isinstance(i, str)])
-    drop_terms = set(path).intersection(set(delta_terms))
-    Di = delta.subs([(g[i], 0) for i in drop_terms])
-    expr_i = S * Di / delta
-    out_expr += expr_i
+    delta_terms =[str(i) for i in delta.free_symbols]
 
-sym.pprint(out_expr)
+    out_expr = 0
+
+    for path in path_edges:
+        S = np.prod([g[i] for i in path if isinstance(i, str)])
+        drop_terms = set(path).intersection(set(delta_terms))
+        Di = delta.subs([(g[i], 0) for i in drop_terms])
+        expr_i = S * Di / delta
+        out_expr += expr_i
+
+    sym.pprint(out_expr)
+    return out_expr
