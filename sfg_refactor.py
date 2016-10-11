@@ -4,10 +4,9 @@ import sympy as sym
 import pandas as pd
 
 # Problem 2-1
-
 D = nx.DiGraph()
 
-nodes = ['Y{0}'.format(i) for i in range(1,8)]
+nodes = ['Y{0}'.format(i) for i in range(1,6)]
 D.add_nodes_from(nodes)
 
 edges = [('Y1', 'Y2', {'label': 1}),
@@ -17,15 +16,32 @@ edges = [('Y1', 'Y2', {'label': 1}),
          ('Y2', 'Y4', {'label':'G4'}),
          ('Y3', 'Y2', {'label':'H1'}),
          ('Y5', 'Y2', {'label':'H3'}),
-         ('Y5', 'Y4', {'label':'H2'}),
-         ('Y5', 'Y6', {'label':'G5'}),
-         ('Y6', 'Y5', {'label':'H4'}),
-         ('Y4', 'Y3', {'label':'H5'}),
-         ('Y6', 'Y7', {'label':'G6'}),
-         ('Y7', 'Y6', {'label':'H6'})
-]
+         ('Y5', 'Y4', {'label':'H2'})]
 
 D.add_edges_from(edges)
+
+# D = nx.DiGraph()
+
+# nodes = ['Y{0}'.format(i) for i in range(1,8)]
+# D.add_nodes_from(nodes)
+
+# edges = [('Y1', 'Y2', {'label': 1}),
+#          ('Y2', 'Y3', {'label':'G1'}),
+#          ('Y3', 'Y4', {'label':'G2'}),
+#          ('Y4', 'Y5', {'label':'G3'}),
+#          ('Y2', 'Y4', {'label':'G4'}),
+#          ('Y3', 'Y2', {'label':'H1'}),
+#          ('Y5', 'Y2', {'label':'H3'}),
+#          ('Y5', 'Y4', {'label':'H2'}),
+#          ('Y5', 'Y6', {'label':'G5'}),
+#          ('Y6', 'Y5', {'label':'H4'}),
+#          ('Y4', 'Y3', {'label':'H5'}),
+#          ('Y6', 'Y7', {'label':'G6'}),
+#          ('Y7', 'Y6', {'label':'H6'})
+# ]
+
+# D.add_edges_from(edges)
+
 
 def sfg_to_tf(D, src, dest):
     """
@@ -105,13 +121,15 @@ def sfg_to_tf(D, src, dest):
 
     nontouching_loop_edges = [np.asarray(loop_edges)[tup] for tup in tuples]
 
+    g = pd.Series(g)
+
+    loop_gains = np.asarray([np.prod(g[i]) for i in loop_edges])
 
     LS = {}
 
     LS[1] = -1 * sum([np.prod([g[edge] for edge in loop]) for loop in loop_edges])
 
-    g = pd.Series(g)
-
+    # Can refactor this to use loop gains
     for order in range(len(tuples)):
         loop_order = nontouching_loop_edges[order]
         if loop_order.ndim > 1:
@@ -128,12 +146,21 @@ def sfg_to_tf(D, src, dest):
 
     out_expr = 0
 
-    for path in path_edges:
-        S = np.prod([g[i] for i in path if isinstance(i, str)])
-        drop_terms = set(path).intersection(set(delta_terms))
-        Di = delta.subs([(g[i], 0) for i in drop_terms])
+    # Compute delta_i's
+    # THIS IS FAILING ON Y1->Y3
+    for path_ix in range(len(DP)):
+        S = np.prod([g[i] for i in path_edges[path_ix] if isinstance(i, str)])
+        path_nodes = DP[path_ix]
+        loops_touching_path = np.asarray([set(path_nodes).isdisjoint(loop)
+                                          for loop in loops])
+        delta_terms = loop_gains[loops_touching_path]
+        if any(delta_terms):
+            drop_terms = sum(delta_terms).free_symbols
+            Di = delta.subs([(i, 0) for i in drop_terms])
+        else:
+            Di = 1
         expr_i = S * Di / delta
         out_expr += expr_i
 
     sym.pprint(out_expr)
-    return out_expr
+    return out_expr, loop_gains, LS
