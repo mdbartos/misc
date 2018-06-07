@@ -1,10 +1,16 @@
+Good: 😀
+
+Probably good: 😐
+
+Bad value: 🙁
+
 Accepted: 😀
 
-Esimated: 🤔
+Esimated: 
 
 Missing:
 
-Questionable: 🤨
+Questionable: 🤔
 
 Predicted: 🔮
 
@@ -24,3 +30,6 @@ Temperature: 🌡
 
 Rainfall: 🌧
 
+Distance: 📏
+
+Angle: 📐k
