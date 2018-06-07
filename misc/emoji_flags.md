@@ -1,16 +1,52 @@
-Good: 😀
+Good: 😀✅
 
-Probably good: 😐
+Probably good: 😐🆗
 
-Bad value: 🙁
+Bad value: 🙁❌
 
-Accepted: 😀
+Flag: 🚩
 
-Esimated: 
+Esimated: 🤔
 
-Missing:
+Below detection: 🔬
 
-Questionable: 🤔
+Above detection: 🔭
+
+Missing: 🤷🔍🕵🕳🧦🌚❓❔
+
+Warning: ⚠
+
+Do not use: 🚫
+
+No issues: 💯
+
+Public: 📖
+
+Manually collected: 📓
+
+Published: 📰🗞
+
+Manually validated: 👌👍
+
+Manually rejected: 👎
+
+Manually flagged for further inspection: ✋
+
+Automatically flagged for further inspection: 🛑
+
+Manually edited: ✍
+
+Cleaned for visualization: 💅
+
+Questionable: 🤨
+
+See annotation: 💬
+
+Not finalized: 🚧
+
+Attention: 🛎
+
+Software bug: 🐛
 
 Predicted: 🔮
 
@@ -18,11 +54,23 @@ Accurate: 🎯
 
 Random: 🎲
 
+Legacy dataset: 🏺
+
+Deprecated: ⚱
+
 Raw: 🥩
 
 Processed: 🌭
 
 # Phenomena:
+
+Mass: ⚖ ⚓ 🏋
+
+Time: ⌛⏳⌚⏰⏱⏲🕰
+
+Energy: 🔥
+
+Volume: 🔈
 
 Voltage: ⚡
 
@@ -32,4 +80,12 @@ Rainfall: 🌧
 
 Distance: 📏
 
-Angle: 📐k
+Battery voltage: 🔋
+
+Power: 🔌
+
+Luminance: 💡
+
+Angle: 📐
+
+Coordinate: 🌐
