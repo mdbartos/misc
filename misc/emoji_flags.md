@@ -4,9 +4,11 @@ Probably good: 😐🆗
 
 Bad value: 🙁❌
 
+Duplicate entry: 👯
+
 Flag: 🚩
 
-Esimated: 🤔
+Estimated: 🤔
 
 Below detection: 🔬
 
