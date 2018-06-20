@@ -1,6 +1,8 @@
 import re
 
-filepath = 'experience.tex'
+cv_sections = {'Education' : 'education.tex',
+               'Experience' : 'experience.tex'}
+
 replacements = {'\\\\newline' : '',
                 '  +' : ' ',
                 '^ *' : ''}
@@ -12,7 +14,7 @@ def parse_cventries(filepath, replacements):
     cv_list = []
 
     with open(filepath) as experience:
-    r = experience.read()
+        r = experience.read()
 
     search_text = r
 
@@ -55,5 +57,12 @@ def parse_cventries(filepath, replacements):
         cv = re.sub(string_to_replace, replacement, cv)
     return cv
 
-cv = parse_cventries(filepath, replacements)
-print(cv)
+if __name__ == "__main__":
+    output = []
+    for title, filepath in cv_sections.items():
+        text = parse_cventries(filepath, replacements)
+        output.append(title)
+        output.append(len(title)*'-' + '\n')
+        output.append(text)
+        output.append('\n')
+    output = '\n'.join(output)
