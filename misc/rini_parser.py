@@ -5,7 +5,7 @@ cv_sections = {'Education' : 'education.tex',
 
 replacements = {'\\\\newline' : '',
                 '  +' : ' ',
-                '^ *' : ''}
+                '\n +' : '\n'}
 
 def parse_cventries(filepath, replacements):
     section_header = '\\cventry'
@@ -66,3 +66,5 @@ if __name__ == "__main__":
         output.append(text)
         output.append('\n')
     output = '\n'.join(output)
+    with open('resume.txt', 'w') as resume:
+        resume.write(output)
